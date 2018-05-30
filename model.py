@@ -6,7 +6,7 @@ Created on Mon May 21 15:11:07 2018
 """
 
 import tensorflow as tf
-from inputdata import get_files, get_trains, get_tests
+from inputdata import get_files, get_trains, get_tests,resultConversion
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -26,9 +26,6 @@ W = tf.Variable(tf.zeros([2304, 2]))
 # 构建偏置矩阵
 b = tf.Variable(tf.zeros([2]))
 
-# 初始化所有variables为0
-sess.run(tf.initialize_all_variables())
-
 # 构建回归模型
 y_pre = tf.matmul(x, W) + b
 y_pre_r = tf.nn.softmax(y_pre)
@@ -40,8 +37,13 @@ cost = -tf.reduce_mean(y * tf.log(tf.clip_by_value(y_pre_r, 1e-10, 1.0)))
 
 # 实现梯度下降
 learning_rate = 0.01
-optimizer = tf.train.GradientDescentOptimizer(learning_rate).minimize(cost)
+optimizer = tf.train.AdadeltaOptimizer(learning_rate).minimize(cost)
+
+
 # optimizer=tf.train.AdamOptimizer(1e-4).minimize(cost)
+
+
+
 
 # 定义相关参数
 
@@ -78,12 +80,14 @@ with tf.Session() as sess:
 
     print('Optimization Finished!')
 
-    # 7.评估效果
-    # Test model
-correct_prediction = tf.equal(tf.argmax(y_pre_r, 1), tf.argmax(y, 1))
-# Calculate accuracy for 3000 examples
-# tf.cast类型转换
-accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
-img_list_test, lab_list_test = get_tests()
-print("Accuracy:", accuracy.eval({x: img_list_test, y: lab_list_test}))
-#    print("Accuracy:",accuracy.eval({X: mnist.test.images[:3000], Y: mnist.test.labels[:3000]}))
+    img_list_test, lab_list_test = get_tests()
+    # print(sess.run(y_pre_r, feed_dict={x: img_list_test, y: lab_list_test}))
+    # print(sess.run(accuracy, feed_dict={x: img_list_test, y: lab_list_test}))
+    poss = sess.run(y_pre_r, feed_dict={x: img_list_test, y: lab_list_test})
+    print(poss)
+    y_pre_r_result = resultConversion(poss)
+
+    print(y_pre_r_result)
+    correct_prediction = tf.equal(tf.argmax(y_pre_r_result, 1), tf.argmax(y, 1))
+    accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+    print(sess.run(accuracy, feed_dict={x: img_list_test, y: lab_list_test}))
