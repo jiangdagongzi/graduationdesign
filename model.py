@@ -6,7 +6,7 @@ Created on Mon May 21 15:11:07 2018
 """
 
 import tensorflow as tf
-from inputdata import get_files, get_trains, get_tests,resultConversion
+from inputdata import get_files, get_trains, get_tests, resultConversion, getMotionProfile
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -39,31 +39,28 @@ cost = -tf.reduce_mean(y * tf.log(tf.clip_by_value(y_pre_r, 1e-10, 1.0)))
 learning_rate = 0.01
 optimizer = tf.train.AdadeltaOptimizer(learning_rate).minimize(cost)
 
-
 # optimizer=tf.train.AdamOptimizer(1e-4).minimize(cost)
-
-
 
 
 # 定义相关参数
 
 # 训练循环次数
-training_epochs = 200
+training_epochs = 120
 # batch 一批，每次训练给算法10个数据
 batch_size = 10
 # 每隔5次，打印输出运算的结果
 display_step = 5
 # 定义训练数量
-num_examples = 1500
+num_examples = 1300
 
 # 预定义初始化
 init = tf.global_variables_initializer()
-
 
 # 初始化
 sess.run(init)
 # 循环训练次数
 #    imagepath,batch_ys = get_files(train_dir)
+
 for epoch in range(training_epochs):
     avg_cost = 0.
     # 总训练批次total_batch =训练总样本量/每批次样本数量
@@ -72,6 +69,7 @@ for epoch in range(training_epochs):
         batch_xs, batch_ys = get_trains(batch_size)
         # print(batch_xs[0])
         # plt.imshow(batch_xs[0].reshape([48, 48]), cmap=plt.cm.Greys_r)
+        a = sess.run(W, feed_dict={x: batch_xs, y: batch_ys})
         _, c = sess.run([optimizer, cost], feed_dict={x: batch_xs, y: batch_ys})
         avg_cost += c / total_batch
     if (epoch + 1) % display_step == 0:
@@ -79,14 +77,19 @@ for epoch in range(training_epochs):
 
 print('Optimization Finished!')
 
+saver = tf.train.Saver()
+saver.save(sess, 'saved_model/model.ckpt')
+
 img_list_test, lab_list_test = get_tests()
-    # print(sess.run(y_pre_r, feed_dict={x: img_list_test, y: lab_list_test}))
-    # print(sess.run(accuracy, feed_dict={x: img_list_test, y: lab_list_test}))
+
+# print(sess.run(accuracy, feed_dict={x: img_list_test, y: lab_list_test}))
 poss = sess.run(y_pre_r, feed_dict={x: img_list_test, y: lab_list_test})
 print(poss)
 y_pre_r_result = resultConversion(poss)
 
-print(y_pre_r_result)
+# print(y_pre_r_result)
 correct_prediction = tf.equal(tf.argmax(y_pre_r_result, 1), tf.argmax(y, 1))
 accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 print(sess.run(accuracy, feed_dict={x: img_list_test, y: lab_list_test}))
+
+

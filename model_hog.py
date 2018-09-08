@@ -20,31 +20,31 @@ y = tf.placeholder("float", shape=[None, 2])
 W = tf.Variable(tf.zeros([10404, 2]))
 # 构建偏置矩阵
 b = tf.Variable(tf.zeros([2]))
-
-# 初始化所有variables为0
-sess.run(tf.initialize_all_variables())
+#
+# # 初始化所有variables为0
+# sess.run(tf.initialize_all_variables())
 
 # 构建回归模型
 y_pre = tf.matmul(x, W) + b
 y_pre_r = tf.nn.softmax(y_pre)
 
 # 构造损失函数
-cost = tf.reduce_mean(-tf.reduce_sum(y * tf.log(y_pre_r), axis=1))
+cost = -tf.reduce_mean(y * tf.log(tf.clip_by_value(y_pre_r, 1e-10, 1.0)))
 
 # 实现梯度下降
 learning_rate = 0.01
-optimizer = tf.train.GradientDescentOptimizer(learning_rate).minimize(cost)
+optimizer = tf.train.AdadeltaOptimizer(learning_rate).minimize(cost)
 
 # 定义相关参数
 
 # 训练循环次数
-training_epochs = 200
+training_epochs = 40
 # batch 一批，每次训练给算法10个数据
 batch_size = 10
 # 每隔5次，打印输出运算的结果
 display_step = 5
 # 定义训练数量
-num_examples = 1500
+num_examples = 1300
 
 # 预定义初始化
 init = tf.global_variables_initializer()
@@ -63,6 +63,7 @@ with tf.Session() as sess:
             batch_xs, batch_ys = get_trains_hog(batch_size)
             # 每次取出100个数据作为训练数据
             #            batch_xs,batch_ys = mnist.train.next_batch(batch_size)
+
             _, c = sess.run([optimizer, cost], feed_dict={x: batch_xs, y: batch_ys})
             avg_cost += c / total_batch
         if (epoch + 1) % display_step == 0:
@@ -72,8 +73,11 @@ with tf.Session() as sess:
 
     # 7.评估效果
     # Test model
+
     correct_prediction = tf.equal(tf.argmax(y_pre_r, 1), tf.argmax(y, 1))
     # tf.cast类型转换
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
     img_list_test, lab_list_test = get_tests_hog()
-    print("Accuracy:", accuracy.eval({x: img_list_test, y: lab_list_test}))
+    poss = sess.run(y_pre_r, feed_dict={x: img_list_test, y: lab_list_test})
+    print(poss)
+    print(sess.run(accuracy, feed_dict={x: img_list_test, y: lab_list_test}))

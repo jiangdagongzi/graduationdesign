@@ -50,7 +50,7 @@ def splitimage(src, rownum, colnum, dstpath):
 img = Image.open(r'C:\Users\A\Desktop\graduationdesign\test.png')
 xnum, ynum = img.size
 x = xnum // 480
-y = ynum // 480
+y = ynum // 96
 print(x, y)
 splitimage(r'C:\Users\A\Desktop\graduationdesign\test.png', y, x, r'C:\Users\A\Desktop\1')
 
